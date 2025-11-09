@@ -28,7 +28,7 @@ CMakeSettings.json
 Thumbs.db
 
 # Git modules
-.gitmodules
+
 
 # Editor backup files
 *.swp
