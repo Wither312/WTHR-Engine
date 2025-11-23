@@ -1,11 +1,17 @@
-#include "Renderer.hpp"
-#include <spdlog/spdlog.h>
-#include <Texture.hpp>
-#include <Components.hpp>
-#include <Model.hpp>
+#include <pch.hpp>
+#include <Framebuffer.hpp>
+#include <Renderer.hpp>
+#include <Scene.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <ScriptEditor.hpp>
 
+Renderer::Renderer() 
+{
 
+}
 
+static Framebuffer::PixelInfo pixel;
 void Renderer::Init()
 {
 	// OpenGL state
@@ -39,6 +45,8 @@ void Renderer::Init()
 	// Compile shaders
 	CreateShaderProgram();
 	spdlog::info("Renderer initialized");
+
+	pickingShader = Shader("shaders/picking.vert", "shaders/picking.frag");
 
 	// In your main application initialization
 
@@ -141,94 +149,79 @@ void Renderer::RenderScene(Scene& scene, Shader& shader)
 
 		});
 
+
 	registry.view<ModelComponent, Transform>().each([&](auto entity, ModelComponent& meshComp, auto& transform) {
-	
+
 
 		glUniform1i(glGetUniformLocation(shader.ID, "useModel"), true);
 
-		shader.setMat4("model", model);
 		//Model* model = meshComp.model.get()->GetModel().get();
 		//model->Draw(shader);
-		if(meshComp.model.get()->IsLoaded())
-		meshComp.model.get()->Draw(shader);
+		if (meshComp.model.get()->IsLoaded())
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), transform.position);
+			model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
+			model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
+			model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
+			model = glm::scale(model, transform.scale);
+			glUniform1i(glGetUniformLocation(shader.ID, "useModel"), true);
+
+			shader.setMat4("model", model);
+			meshComp.model.get()->Draw(shader);
+
+		}
 		});
-	//registry.view<ModelComponent, Transform>().each([&](auto entity, auto& modelComp, auto& transform) {
-	//	// Quick null check
-	//	
-	//	// Build transform matrix
-	//	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), transform.position);
-	//	modelMatrix = glm::rotate(modelMatrix, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
-	//	modelMatrix = glm::rotate(modelMatrix, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
-	//	modelMatrix = glm::rotate(modelMatrix, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
-	//	modelMatrix = glm::scale(modelMatrix, transform.scale);
 
-	//	glUniform1i(glGetUniformLocation(shader.ID, "useModel"), true);
-	//	shader.setMat4("model", modelMatrix);
+	entt::entity clickedEntity = static_cast<entt::entity>(pixel.ObjectID);
+	if (pixel.ObjectID)
+	{
+		int width=1280, height=720;
+		glViewport(0, 0, width, height);
 
-	//	modelComp.model->Draw(shader);
-	//
-	//	});
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::SetDrawlist();
 
-	
-	/*if(scene.modelWrapper.get()->IsLoaded())
-	scene.modelWrapper.get()->Draw(shader);
-	*/
-	
-	//registry.view<ThreadSafeModel, Transform>().each([&](auto entity, auto& modelComp, auto& transform) {
-	//	glm::mat4 model = glm::translate(glm::mat4(1.0f), transform.position);
-	//	model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
-	//	model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
-	//	model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
-	//	model = glm::scale(model, transform.scale);
+		float windowHeight = ImGui::GetWindowHeight();
+		float windowWidth = ImGui::GetWindowWidth();
+		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 
-	//	shader.setMat4("model", model);
+		auto& camera = scene.GetCamera();
 
+		glm::mat4 cameraView = camera.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
 
+		if (scene.HasComponent<Transform>(clickedEntity))
+		{
+			auto& transform = scene.GetComponent<Transform>(clickedEntity);
 
+			// Convert rotation from degrees to radians
+			glm::vec3 rotationRad = glm::radians(transform.rotation);
 
-	//	if (modelComp.model)
-	//	{
-	//		modelComp.model.get()->Draw(shader);
-	//	}
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, transform.position);
+			model = glm::rotate(model, rotationRad.x, glm::vec3(1, 0, 0));
+			model = glm::rotate(model, rotationRad.y, glm::vec3(0, 1, 0));
+			model = glm::rotate(model, rotationRad.z, glm::vec3(0, 0, 1));
+			model = glm::scale(model, transform.scale);
 
-	//	});
+			ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(projection),
+				gizmoType, ImGuizmo::MODE::LOCAL, glm::value_ptr(model));
 
+			if (ImGuizmo::IsUsing())
+			{
+				
 
+				transform.SetFromMatrix(model);
 
-
-
-
-	// Typically you'd use 1 shader per mesh, but we’ll keep it simple
-	//for (const auto& shader : scene.GetShaders())
-	//{
-	//	shader->use();
-	//	shader->setMat4("view", view);
-	//	shader->setMat4("projection", projection);
-
-	//	static glm::vec3 color(1.f);
+				// Ensure rotation is converted back to degrees if SetFromMatrix updates rotation in radians
+			}
+		}
 
 
-	//	ImGui::Begin("Cube color");
-	//	ImGui::ColorEdit3("Color:", &color.x);
-	//	ImGui::End();
 
-	//	glm::mat4 model = glm::mat4(1.0f);
-	//	model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-	//	model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-	//	shader->setMat4("model", model);
-	//	scene.m_Model.Draw(*shader);
+	}
 
 
-	//	for (const auto& shape : scene.GetMeshes())
-	//	{
-	//		// Example: each shape might have its own transform
-	//		shader->setMat4("model", shape.get()->GetModelMatrix());
-	//		// Draw the shape (assuming Mesh::Draw() exists)
-	//		shape->mesh.Draw(*shader);
-	//	}
-
-	//	glUseProgram(0);
-	//}
 }
 
 
@@ -294,4 +287,147 @@ void Renderer::CreateShaderProgram()
 
 	glDeleteShader(vs);
 	glDeleteShader(fs);
+}
+
+void Renderer::RenderPicking(Scene& scene, int x, int y)
+{
+	static bool framebufferInitialized = false;
+	if (!framebufferInitialized)
+	{
+		if (!m_ObjectPicking.create(1280, 720))
+		{
+			spdlog::error("Failed to create picking framebuffer!");
+			return;
+		}
+		framebufferInitialized = true;
+	}
+
+	// --- Bind and clear picking framebuffer ---
+	m_ObjectPicking.Bind();
+	glViewport(0, 0, 1280, 720);
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	pickingShader.use();
+
+	float nearPlane = 0.1f;
+	float farPlane = 100.f;
+	glm::mat4 view = scene.GetCamera().GetViewMatrix();
+	glm::mat4 projection = glm::perspective(glm::radians(45.f), 1280.f / 720.f, nearPlane, farPlane);
+
+	auto& reg = scene.GetRegistry();
+	reg.view<Transform>().each([&](entt::entity ent, Transform& transform)
+		{
+			glm::mat4 World(1.0f);
+
+			// Translation
+			World = glm::translate(World, transform.position);
+			// Rotation (XYZ order)
+			World = glm::rotate(World, transform.rotation.x, glm::vec3(1, 0, 0));
+			World = glm::rotate(World, transform.rotation.y, glm::vec3(0, 1, 0));
+			World = glm::rotate(World, transform.rotation.z, glm::vec3(0, 0, 1));
+			// Scale
+			World = glm::scale(World, transform.scale);
+
+			glm::mat4 MVP = projection * view * World;
+			pickingShader.setMat4("MVP", MVP);
+			pickingShader.setUInt("ObjectID", static_cast<uint32_t>(entt::to_integral(ent)));
+			pickingShader.setUInt("DrawID", 0);
+			pickingShader.setUInt("PrimID", 0);
+
+			if (reg.any_of<MeshComponent>(ent))
+			{
+				auto& mesh = reg.get<MeshComponent>(ent);
+				mesh.mesh->Draw(pickingShader);
+			}
+			else if (reg.any_of<ModelComponent>(ent))
+			{
+				auto& model = reg.get<ModelComponent>(ent);
+				model.model->Draw(pickingShader);
+			}
+		});
+
+	// --- Read pixel ---
+	Framebuffer::PixelInfo pixel = m_ObjectPicking.ReadPixel(
+		static_cast<GLuint>(x),
+		static_cast<GLuint>(720 - y - 1) // Flip Y
+	);
+
+	// Unbind framebuffer
+	m_ObjectPicking.Unbind();
+
+	// Convert to entt entity safely
+	if (pixel.ObjectID != 0)
+	{
+		entt::entity clickedEntity = static_cast<entt::entity>(pixel.ObjectID);
+		spdlog::debug("Clicked entity ID: {}", pixel.ObjectID);
+		// You could highlight or select it here
+	}
+}
+
+
+void Renderer::HandlePickingClick(Scene& scene, double mouseX, double mouseY,entt::entity& picked)
+{
+	// 1. Read pixel info from picking framebuffer
+	pixel = m_ObjectPicking.ReadPixel(
+		static_cast<int>(mouseX),
+		static_cast<int>(720 - mouseY - 1) // flip Y
+	);
+
+	pixel.Print(); // Optional debug output
+
+	// 2. If no object was clicked, return early
+	if (pixel.ObjectID == 0)
+		return;
+
+	// 3. Convert back to entt::entity ID
+	entt::entity clickedEntity = static_cast<entt::entity>(pixel.ObjectID);
+	picked = clickedEntity;
+
+	if (!scene.GetRegistry().valid(clickedEntity))
+	{
+		spdlog::warn("Clicked entity {} is not valid!", pixel.ObjectID);
+		return;
+	}
+
+	// 4. Optional — highlight or log selection
+	spdlog::info("Entity {} clicked (DrawID: {}, PrimID: {})",
+		pixel.ObjectID, pixel.DrawID, pixel.PrimID);
+
+	// 5. Example: draw highlight around the clicked entity
+	Shader highlightShader("shaders/simple_color.vert", "shaders/simple_color.frag");
+	highlightShader.use();
+
+	// build view/projection
+	glm::mat4 view = scene.GetCamera().GetViewMatrix();
+	glm::mat4 projection = glm::perspective(glm::radians(45.f),
+		1280.f / 720.f, 0.1f, 100.f);
+
+	auto& reg = scene.GetRegistry();
+
+	if (reg.any_of<Transform>(clickedEntity))
+	{
+		auto& transform = reg.get<Transform>(clickedEntity);
+
+		glm::mat4 world(1.0f);
+		world = glm::translate(world, transform.position);
+		world = glm::rotate(world, transform.rotation.x, glm::vec3(1, 0, 0));
+		world = glm::rotate(world, transform.rotation.y, glm::vec3(0, 1, 0));
+		world = glm::rotate(world, transform.rotation.z, glm::vec3(0, 0, 1));
+		world = glm::scale(world, transform.scale);
+
+		glm::mat4 wvp = projection * view * world;
+		highlightShader.setMat4("WVP", wvp);
+
+		if (reg.any_of<MeshComponent>(clickedEntity))
+		
+		{
+
+		}
+		else if (reg.any_of<ModelComponent>(clickedEntity))
+		{
+			auto& model = reg.get<ModelComponent>(clickedEntity);
+			model.model->Draw(highlightShader);
+		}
+	}
 }

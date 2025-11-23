@@ -3,6 +3,7 @@
 #include <PrimitiveShape.hpp>
 #include <filesystem>
 #include <Components.hpp>
+#include <Scene.hpp>
 
 
 Application::Application(int width, int height, const char* title)
@@ -28,11 +29,7 @@ bool Application::Init()
 	if (m_WindowManager.GetWindow() == nullptr) __debugbreak();
 	return true;
 }
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
-#include <thread>
-#include <atomic>
+
 
 bool CheckSharedContextThreads(GLFWwindow* contextA, GLFWwindow* contextB, std::thread& threadB)
 {
@@ -68,6 +65,12 @@ bool CheckSharedContextThreads(GLFWwindow* contextA, GLFWwindow* contextB, std::
 
 	return result;
 }
+std::string load_file(const std::string& path) {
+	std::ifstream f(path);
+	std::stringstream ss;
+	ss << f.rdbuf();
+	return ss.str();
+}
 
 
 static auto lastFrame = std::chrono::high_resolution_clock::now();
@@ -84,7 +87,8 @@ void Application::Run()
 
 	Scene scene(m_WindowManager.GetWindow());
 
-	GLFWwindow*  workerWindow = glfwCreateWindow(1, 1, "GPU Worker", nullptr, m_WindowManager.GetWindow());
+	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	GLFWwindow* workerWindow = glfwCreateWindow(1, 1, "GPU Worker", nullptr, m_WindowManager.GetWindow());
 
 
 	GLFWwindow* contextA = m_WindowManager.GetWindow();
@@ -114,15 +118,11 @@ void Application::Run()
 
 	////TODO MODEL LOADING
 
-	auto ent = scene.CreateCube();
-
-	auto& transform = scene.GetRegistry().get<Transform>(ent);
-	auto& mesh = scene.GetRegistry().get<MeshComponent>(ent);
-	Texture texture("texture.png", "texture_diffuse");
-	mesh.mesh->mesh.textures.push_back(texture);
-
-
+	m_Renderer.m_Editor.set(&scene.script);
 	auto& registry = scene.GetRegistry();
+	entt::entity ent;
+
+
 
 	while (m_WindowManager.isOpen())
 	{
@@ -131,7 +131,7 @@ void Application::Run()
 		lastFrame = currentFrame;
 
 		io.DeltaTime = deltaTime;
-
+		scene.script.update(1);
 
 		m_WindowManager.PollEvents();
 		m_Input.Update();
@@ -179,18 +179,32 @@ void Application::Run()
 		if (glfwGetKey(m_WindowManager.GetWindow(), GLFW_KEY_D) == GLFW_PRESS)
 			scene.GetCamera().ProcessKeyboard(RIGHT, deltaTime);
 
-		float rotationSpeed = 50.0f; // degrees per second
-		double time = glfwGetTime();
 
-		transform.rotation.y = fmod(time * 30.0, 360.0); // rotate Y
+		std::filesystem::path path = std::filesystem::current_path().concat("\\test.sce");
 
-
-
-		ImGui::Begin("Cube transformation");
-		ImGui::SliderFloat3("Position:", &transform.position.x, -10, 10);
-		ImGui::SliderFloat3("rotation:", &transform.rotation.x, -360, 360);
-		ImGui::End();
 		ImGui::Begin("ECS");
+		if (ImGui::Button("Save"))
+		{
+			scene.Save(path);
+		}
+
+		ImGui::SameLine(); // Put next button on the same row
+
+		if (ImGui::Button("Load"))
+		{
+			scene.Load(path);
+		}
+		ImGui::SameLine(); // Put next button on the same row
+
+		if (ImGui::Button("Clear"))
+		{
+			registry.clear();
+		}
+
+
+		ImGui::Separator();
+
+
 		if (ImGui::Button("+ Entity"))
 		{
 			scene.CreateCube();
@@ -200,8 +214,13 @@ void Application::Run()
 
 		if (ImGui::Button("- Entity"))
 		{
-			spdlog::trace("No entity selected");
+			if (registry.valid(ent)) // optional: check if entity is valid
+			{
+				registry.destroy(ent); // deletes the entity and all its components
+				ent = entt::null;     // reset your selected entity if needed
+			}
 		}
+
 
 		ImGui::Separator();
 
@@ -231,6 +250,7 @@ void Application::Run()
 					if (it != all_Textures.end()) // exists
 					{
 						meshComp.mesh->mesh.textures.push_back(it->second); // push the Texture object
+						registry.emplace<Texture>(entity);
 						ImGui::CloseCurrentPopup();
 					}
 					else
@@ -472,7 +492,91 @@ void Application::Run()
 
 		m_Renderer.Clear();
 
+		if (m_Input.IsMouseButtonPressed(GLFW_MOUSE_BUTTON_1))
+		{
+			double x, y;
+			glfwGetCursorPos(m_WindowManager.GetWindow(), &x, &y);
+			m_Renderer.RenderPicking(scene, x, y);
+		}
+
+		if (m_Input.IsMouseButtonPressed(GLFW_MOUSE_BUTTON_1))
+		{
+			double x, y;
+			glfwGetCursorPos(m_WindowManager.GetWindow(), &x, &y);
+			m_Renderer.HandlePickingClick(scene, x, y, ent);
+		}
+
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoBringToFrontOnFocus |
+			ImGuiWindowFlags_NoBackground;
+
+		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
+		ImGui::SetNextWindowSize(ImGui::GetMainViewport()->Size);
+
+		ImGui::Begin("GizmoOverlay", nullptr, flags);
+
+		if (ImGui::BeginPopupContextWindow("Context"))
+		{
+			if (ImGui::BeginMenu("Spawn"))
+			{
+				if (ImGui::BeginMenu("Shapes"))
+				{
+					if (ImGui::BeginMenu("Cube"))
+					{
+						if (ImGui::MenuItem("Single")) scene.CreateCube();
+						if (ImGui::MenuItem("Grid 10x10")) scene.CreateCubeGrid(10, 10,10);
+
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu("Sphere"))
+					{
+						// etc.
+						ImGui::EndMenu();
+					}
+
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndPopup();
+		}
+
+
+		const char* label = "Play";
+
+		// Get the current window size
+		ImVec2 windowSize = ImGui::GetContentRegionAvail(); // available size in the window
+
+		// Calculate the size of the button
+		ImVec2 buttonSize = ImVec2(100, 0); // width 100, height 0 (automatic)
+
+		// Set cursor X to center the button
+		ImGui::SetCursorPosX((windowSize.x - buttonSize.x) * 0.5f);
+
+		// Optional: center vertically in remaining space
+		// ImGui::SetCursorPosY((windowSize.y - buttonSize.y) * 0.5f);
+
+		// Draw button
+		if (ImGui::Button(label, buttonSize)) {
+			spdlog::debug("CLICKEDD!!!");
+			//TODO play scripts
+
+		}
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y,
+			ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
 		m_Renderer.RenderScene(scene, *ptrShdr);
+		ImGui::End();
+
+
+		m_Renderer.m_Editor.draw(registry);
+		m_Renderer.m_Editor.drawDebugPanel(registry);
 
 		m_WindowManager.EndFrame();
 
@@ -492,6 +596,24 @@ void Application::Run()
 				lastY = static_cast<float>(ypos);
 				firstMouse = true; // reset to avoid huge jump
 			}
+		}
+
+
+		if (glfwGetKey(m_WindowManager.GetWindow(), GLFW_KEY_Q) == GLFW_PRESS)
+		{
+			m_Renderer.gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+		}
+		else if (glfwGetKey(m_WindowManager.GetWindow(), GLFW_KEY_W) == GLFW_PRESS)
+		{
+			m_Renderer.gizmoType = ImGuizmo::OPERATION::ROTATE;
+		}
+		else if (glfwGetKey(m_WindowManager.GetWindow(), GLFW_KEY_E) == GLFW_PRESS)
+		{
+			m_Renderer.gizmoType = ImGuizmo::OPERATION::SCALE;
+		}
+		else if (glfwGetKey(m_WindowManager.GetWindow(), GLFW_KEY_R) == GLFW_PRESS)
+		{
+			m_Renderer.gizmoType = ImGuizmo::OPERATION::SCALEU; // uniform scale
 		}
 
 		if (isFocused)

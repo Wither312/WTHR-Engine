@@ -1,17 +1,5 @@
-﻿#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-#include <thread>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <memory>
-#include <vector>
-#include <functional>
-#include <atomic>
-#include <stdexcept>
-#include <sstream>
+﻿
+#include <pch.hpp>
 
 class ThreadSafeModel; // Forward declaration
 

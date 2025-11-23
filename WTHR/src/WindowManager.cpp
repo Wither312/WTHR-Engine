@@ -1,6 +1,7 @@
 #include <pch.hpp>
 #include "WindowManager.hpp"
 
+
 WindowManager::WindowManager(int width, int height, const char* title)
     : m_Width(width), m_Height(height), m_Title(title), m_Window(nullptr)
 {
@@ -69,6 +70,8 @@ void WindowManager::BeginFrame()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
+
 }
 void WindowManager::EndFrame()
 {

@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # MSVC multi-processor compile
 if(MSVC)
     add_compile_options(/MP)
+  
 endif()
 if(MSVC)
   set(CMAKE_C_COMPILER_LAUNCHER "")
@@ -23,6 +24,7 @@ add_subdirectory(vendor/entt)
 add_subdirectory(vendor/json)
 add_subdirectory(vendor/assimp)
 add_subdirectory(vendor/Catch2)
+add_subdirectory(vendor/sol2)
 
 # Glad
 add_library(glad STATIC vendor/glad/src/src/glad.c)
@@ -41,6 +43,9 @@ set(IMGUI_SRC
 add_library(imgui ${IMGUI_SRC})
 target_include_directories(imgui PUBLIC vendor/imgui vendor/imgui/backends)
 target_link_libraries(imgui PUBLIC glfw)
+
+
+
 
 
 # ImGuizmo

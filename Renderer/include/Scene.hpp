@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include <entt/entt.hpp>
 #include <memory>
+#include <filesystem>
 
-
+#include <Scripts.hpp>
 #include "Components.hpp"
 #include "PrimitiveShape.hpp"
 #include "Model.hpp"
@@ -13,13 +14,38 @@ class Scene {
 public:
 	Scene(GLFWwindow* window) : worker(window)
 	{
+		spdlog::set_level(spdlog::level::debug);
+		spdlog::set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
+
+
 
 	}
-
+	void print_transform(const Transform& t) {
+		std::cout << "Position: (" << t.position.x << ", " << t.position.y << ", " << t.position.z << ")\n";
+		std::cout << "Rotation: (" << t.rotation.x << ", " << t.rotation.y << ", " << t.rotation.z << ")\n";
+		std::cout << "Scale:    (" << t.scale.x << ", " << t.scale.y << ", " << t.scale.z << ")\n";
+	}
 	entt::registry& GetRegistry() { return m_Registry; }
 	Camera& GetCamera() { return m_Camera; }
 	std::unordered_map<std::string, Texture>& GetTextures() { return m_Textures; }; // path or name → texture data
 
+
+
+	void CreateCubeGrid(int width, int length, int height, glm::vec3 pos = glm::vec3(0.f))
+	{
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < length; j++)
+			{
+				for (int k = 0; k < height; k++)
+				{
+					CreateCube(glm::vec3(i * 1.1, j * 1.1, k * 1.1));
+				}
+			}
+		}
+
+	}
 
 	// -------------------------
 	// Helper to create a cube
@@ -27,7 +53,11 @@ public:
 	entt::entity CreateCube(const glm::vec3& position = glm::vec3(0.f)) {
 		auto entity = m_Registry.create();
 		m_Registry.emplace<Transform>(entity, position);
-		m_Registry.emplace<MeshComponent>(entity, std::make_shared<Shapes::Cube>());
+		auto& mesh = m_Registry.emplace<MeshComponent>(entity, std::make_shared<Shapes::Cube>());
+		auto it = m_Textures.find("stone.png");
+
+		mesh.mesh->mesh.textures.push_back(it->second);
+		m_Registry.emplace<Texture>(entity);
 		return entity;
 	}
 
@@ -57,6 +87,9 @@ public:
 		return entity;
 	}
 
+	void Save(const std::filesystem::path&);
+	void Load(const std::filesystem::path&);
+
 
 	template<typename T>
 	bool HasComponent(entt::entity entity) {
@@ -73,6 +106,7 @@ public:
 		return m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
 	}
 	GLContextWorker worker;
+	Script script;
 private:
 	std::unordered_map<std::string, Texture> m_Textures; // path or name → texture data
 	entt::registry m_Registry;

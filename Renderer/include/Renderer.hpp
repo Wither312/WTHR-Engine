@@ -1,16 +1,17 @@
 #pragma once
 #include <pch.hpp>
+#include <Framebuffer.hpp>
+#include <entt/entt.hpp>
+#include <ScriptEditor.hpp>
 
-#include <Camera.hpp>
-#include <Scene.hpp>
-#include <Shader.hpp>
-#include <Mesh.hpp>
-#include <PrimitiveShape.hpp>
+class Scene;
+class Shader;
+
 
 class Renderer
 {
 public:
-    Renderer() = default;
+    Renderer();
     ~Renderer()
     {
 
@@ -22,12 +23,19 @@ public:
     void DrawTriangle(const glm::vec3& color);
     void RenderScene(Scene&,Shader& );
 
+    void RenderPicking(Scene&,int,int);
+    void HandlePickingClick(Scene& scene, double mouseX, double mouseY,entt::entity&);
 
+    ImGuizmo::OPERATION gizmoType;
+    ScriptEditor m_Editor;
 private:
     GLuint m_VAO = 0;
     GLuint m_VBO = 0;
     GLuint m_ShaderProgram = 0;
+    Framebuffer m_ObjectPicking;
 
+
+    Shader pickingShader;
     GLuint CompileShader(const std::string& source, GLenum type);
     void CreateShaderProgram();
 };

@@ -1,9 +1,11 @@
 #pragma once
+#include <pch.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 #include "Mesh.hpp"
 #include "Model.hpp"
 #include <PrimitiveShape.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 //Color component
 struct Color {
@@ -13,9 +15,31 @@ struct Color {
 // Transform component
 struct Transform {
 	glm::vec3 position{ 0.0f };
-	glm::vec3 rotation{ 0.0f };
+	glm::vec3 rotation{ 0.0f }; // Euler angles in degrees
 	glm::vec3 scale{ 1.0f };
+
+	void SetFromMatrix(const glm::mat4& matrix)
+	{
+		// Extract translation
+		position = glm::vec3(matrix[3]);
+
+		// Extract scale
+		scale.x = glm::length(glm::vec3(matrix[0]));
+		scale.y = glm::length(glm::vec3(matrix[1]));
+		scale.z = glm::length(glm::vec3(matrix[2]));
+
+		// Remove scale from rotation matrix
+		glm::mat3 rotationMatrix;
+		rotationMatrix[0] = glm::vec3(matrix[0]) / scale.x;
+		rotationMatrix[1] = glm::vec3(matrix[1]) / scale.y;
+		rotationMatrix[2] = glm::vec3(matrix[2]) / scale.z;
+
+		// Extract Euler angles (in radians)
+		rotation = glm::degrees(glm::eulerAngles(glm::quat_cast(rotationMatrix)));
+	}
+
 };
+
 
 // Mesh component (wraps a primitive shape)
 struct MeshComponent {

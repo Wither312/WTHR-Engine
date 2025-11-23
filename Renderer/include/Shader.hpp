@@ -110,6 +110,16 @@ public:
     {
         glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
     }
+    void setUInt(const std::string& name, unsigned int value) const
+    {
+        GLint location = glGetUniformLocation(ID, name.c_str());
+        if (location == -1)
+        {
+            spdlog::warn("Uniform '{}' not found in shader {}", name, ID);
+            return;
+        }
+        glUniform1ui(location, value);
+    }
     // ------------------------------------------------------------------------
     void setFloat(const std::string& name, float value) const
     {

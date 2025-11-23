@@ -1,11 +1,6 @@
 #pragma once
 #include <pch.hpp>
-#include <Shader.hpp>
-#include <vector>
-#include <string>
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <Texture.hpp>
+
 
 #define MAX_BONE_INFLUENCE 4
 
@@ -20,6 +15,8 @@ struct Vertex {
     float m_Weights[MAX_BONE_INFLUENCE];
 };
 
+class Shader;
+class Texture;
 
 class Mesh {
 public:
@@ -43,7 +40,10 @@ public:
 
 private:
     unsigned int VAO, VBO, EBO;
+    // Map from context ID to VAO ID
+    std::unordered_map<uintptr_t, unsigned int> VAOs;
 
     // Initializes all buffers and attribute pointers
     void setupMesh();
+    void setupMeshForContext(uintptr_t contextID);
 };
