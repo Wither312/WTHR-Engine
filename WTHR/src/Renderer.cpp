@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <ScriptEditor.hpp>
 
-Renderer::Renderer() 
+Renderer::Renderer(int width,int height) : width(width),height(height)
 {
 
 }
@@ -86,7 +86,7 @@ void Renderer::RenderScene(Scene& scene, Shader& shader)
 	float nearPlane = 0.1f;  // don’t make it too small
 	float farPlane = 100.f; // must be farther than your objects
 
-	float width = 1280, height = 720;
+
 	glm::mat4 projection = glm::perspective(glm::radians(45.f), width / height, nearPlane, farPlane);
 
 	glm::mat4 model = glm::mat4(1.0f);
@@ -175,7 +175,6 @@ void Renderer::RenderScene(Scene& scene, Shader& shader)
 	entt::entity clickedEntity = static_cast<entt::entity>(pixel.ObjectID);
 	if (pixel.ObjectID)
 	{
-		int width=1280, height=720;
 		glViewport(0, 0, width, height);
 
 		ImGuizmo::SetOrthographic(false);
@@ -294,7 +293,7 @@ void Renderer::RenderPicking(Scene& scene, int x, int y)
 	static bool framebufferInitialized = false;
 	if (!framebufferInitialized)
 	{
-		if (!m_ObjectPicking.create(1280, 720))
+		if (!m_ObjectPicking.create(width, width))
 		{
 			spdlog::error("Failed to create picking framebuffer!");
 			return;
@@ -304,7 +303,7 @@ void Renderer::RenderPicking(Scene& scene, int x, int y)
 
 	// --- Bind and clear picking framebuffer ---
 	m_ObjectPicking.Bind();
-	glViewport(0, 0, 1280, 720);
+	glViewport(0, 0, width,height);
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -313,7 +312,7 @@ void Renderer::RenderPicking(Scene& scene, int x, int y)
 	float nearPlane = 0.1f;
 	float farPlane = 100.f;
 	glm::mat4 view = scene.GetCamera().GetViewMatrix();
-	glm::mat4 projection = glm::perspective(glm::radians(45.f), 1280.f / 720.f, nearPlane, farPlane);
+	glm::mat4 projection = glm::perspective(glm::radians(45.f), width / height, nearPlane, farPlane);
 
 	auto& reg = scene.GetRegistry();
 	reg.view<Transform>().each([&](entt::entity ent, Transform& transform)
@@ -350,7 +349,7 @@ void Renderer::RenderPicking(Scene& scene, int x, int y)
 	// --- Read pixel ---
 	Framebuffer::PixelInfo pixel = m_ObjectPicking.ReadPixel(
 		static_cast<GLuint>(x),
-		static_cast<GLuint>(720 - y - 1) // Flip Y
+		static_cast<GLuint>(height - y - 1) // Flip Y
 	);
 
 	// Unbind framebuffer
@@ -371,7 +370,7 @@ void Renderer::HandlePickingClick(Scene& scene, double mouseX, double mouseY,ent
 	// 1. Read pixel info from picking framebuffer
 	pixel = m_ObjectPicking.ReadPixel(
 		static_cast<int>(mouseX),
-		static_cast<int>(720 - mouseY - 1) // flip Y
+		static_cast<int>(height - mouseY - 1) // flip Y
 	);
 
 	pixel.Print(); // Optional debug output
@@ -401,7 +400,7 @@ void Renderer::HandlePickingClick(Scene& scene, double mouseX, double mouseY,ent
 	// build view/projection
 	glm::mat4 view = scene.GetCamera().GetViewMatrix();
 	glm::mat4 projection = glm::perspective(glm::radians(45.f),
-		1280.f / 720.f, 0.1f, 100.f);
+		width / height, 0.1f, 100.f);
 
 	auto& reg = scene.GetRegistry();
 

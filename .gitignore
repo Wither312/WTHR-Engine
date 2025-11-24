@@ -13,6 +13,7 @@ Debug/
 Release/
 x64/
 x86/
+assets/
 
 # CMake files
 CMakeFiles/
@@ -28,7 +29,7 @@ CMakeSettings.json
 Thumbs.db
 
 # Git modules
-
+.gitattributes
 
 # Editor backup files
 *.swp

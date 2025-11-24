@@ -1,9 +1,9 @@
 #include <pch.hpp>
 #include "WindowManager.hpp"
+int WindowManager::m_Width = 1920;
+int WindowManager::m_Height = 1080;
 
-
-WindowManager::WindowManager(int width, int height, const char* title)
-    : m_Width(width), m_Height(height), m_Title(title), m_Window(nullptr)
+WindowManager::WindowManager(int width, int height, const char* title) :  m_Title(title), m_Window(nullptr)
 {
 }
 
@@ -14,6 +14,8 @@ WindowManager::~WindowManager()
 
 bool WindowManager::Init()
 {
+  
+
     spdlog::info("Initializing GLFW...");
 
     if (!glfwInit())
@@ -155,5 +157,6 @@ void WindowManager::SetSize(int width, int height)
 void WindowManager::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    
     spdlog::info("Framebuffer resized: {}x{}", width, height);
 }

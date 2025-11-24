@@ -55,9 +55,11 @@ public:
 		m_Registry.emplace<Transform>(entity, position);
 		auto& mesh = m_Registry.emplace<MeshComponent>(entity, std::make_shared<Shapes::Cube>());
 		auto it = m_Textures.find("stone.png");
-
-		mesh.mesh->mesh.textures.push_back(it->second);
-		m_Registry.emplace<Texture>(entity);
+		if (it != m_Textures.end())
+		{
+			mesh.mesh->mesh.textures.push_back(it->second);
+			m_Registry.emplace<Texture>(entity);
+		}
 		return entity;
 	}
 

@@ -44,15 +44,13 @@ add_library(imgui ${IMGUI_SRC})
 target_include_directories(imgui PUBLIC vendor/imgui vendor/imgui/backends)
 target_link_libraries(imgui PUBLIC glfw)
 
-
-
-
-
 # ImGuizmo
 add_library(ImGuizmo vendor/ImGuizmo/ImGuizmo.cpp)
 target_include_directories(ImGuizmo PUBLIC vendor/ImGuizmo vendor/imgui)
 target_link_libraries(ImGuizmo PUBLIC imgui glm)
 
 # Add WTHR app
-add_subdirectory(Renderer)
+add_subdirectory(Physics)
 add_subdirectory(WTHR)
+add_subdirectory(Editor)
+add_subdirectory(Runtime)

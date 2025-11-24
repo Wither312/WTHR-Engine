@@ -5,7 +5,7 @@
 class WindowManager
 {
 public:
-    WindowManager(int width = 1280, int height = 720, const char* title = "WTHR Engine");
+    WindowManager(int width = 5, int height = 5, const char* title = "WTHR Engine");
     ~WindowManager();
 
     // Initialization & shutdown
@@ -21,8 +21,8 @@ public:
     void EndFrame();
 
     // Getters & setters
-    int GetWidth() const { return m_Width; }
-    int GetHeight() const { return m_Height; }
+    static int GetWidth()  { return m_Width; }
+    static int GetHeight()  { return m_Height; }
     const char* GetTitle() const { return m_Title; }
     GLFWwindow* GetWindow() const { return m_Window; }
     bool isOpen() const { return !glfwWindowShouldClose(m_Window); }
@@ -31,8 +31,8 @@ public:
     void SetSize(int width, int height);
 
 private:
-    int m_Width;
-    int m_Height;
+    static int m_Width;
+    static int m_Height;
     const char* m_Title;
     GLFWwindow* m_Window = nullptr;
 

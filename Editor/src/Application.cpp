@@ -6,16 +6,16 @@
 #include <Scene.hpp>
 
 
-Application::Application(int width, int height, const char* title)
-	: m_Width(width), m_Height(height), m_Title(title)
+Application::Application(int width, int height, const char* title) : m_Renderer(width,height)
 {
+
 }
 
 Application::~Application()
 {
 	Shutdown();
 }
-bool Application::isFocused = true;
+bool Application::isFocused = false;
 
 bool Application::Init()
 {

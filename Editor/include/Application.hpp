@@ -8,7 +8,7 @@
 class Application
 {
 public:
-	Application(int width = 1280, int height = 720, const char* title = "WTHR Editor");
+	Application(int width = 5, int height = 5, const char* title = "WTHR Editor");
 	virtual ~Application();
 
 	bool Init();
@@ -24,9 +24,6 @@ protected:
 	void Shutdown();
 
 protected:
-	int m_Width;
-	int m_Height;
-	const char* m_Title;
 	WindowManager m_WindowManager;
 	InputManager m_Input;
 	Renderer m_Renderer;
