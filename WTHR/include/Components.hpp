@@ -74,7 +74,7 @@ public:
 		model.reset();
 		isLoaded = false;
 	}
-
+	std::string getName() { return model->getDirectory(); }
 private:
 	std::unique_ptr<Model> model;
 	std::mutex modelMutex;

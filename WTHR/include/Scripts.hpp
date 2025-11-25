@@ -9,11 +9,13 @@
 #include <entt/entt.hpp>
 
 struct ScriptInstance {
+    ScriptInstance() { isActive = true; }
     std::string name;
     std::string code;
     sol::function onUpdate;       // called every frame
     sol::function onInit;         // called on attach
     sol::function onDestroy;      // called on detach
+    bool isActive;
 };
 
 class Script {
@@ -46,7 +48,7 @@ public:
     sol::state lua;
     std::function<void(const std::string&)> printCallback;
 
-    // Store all script sources
+    // Store all script sources, filepath, script
     std::unordered_map<std::string, ScriptInstance> scripts;
 
     // Track which scripts are attached to which objects

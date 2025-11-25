@@ -21,8 +21,8 @@ public:
     void EndFrame();
 
     // Getters & setters
-    static int GetWidth()  { return m_Width; }
-    static int GetHeight()  { return m_Height; }
+     int GetWidth()  { return m_Width; }
+     int GetHeight()  { return m_Height; }
     const char* GetTitle() const { return m_Title; }
     GLFWwindow* GetWindow() const { return m_Window; }
     bool isOpen() const { return !glfwWindowShouldClose(m_Window); }
@@ -31,8 +31,8 @@ public:
     void SetSize(int width, int height);
 
 private:
-    static int m_Width;
-    static int m_Height;
+     int m_Width;
+     int m_Height;
     const char* m_Title;
     GLFWwindow* m_Window = nullptr;
 

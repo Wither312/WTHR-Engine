@@ -66,7 +66,7 @@ public:
 	// -------------------------
 	// Helper to create a model (async)
 	// -------------------------
-	entt::entity CreateModel(const std::string& path, const glm::vec3& position)
+	entt::entity CreateModel(const std::string& path, const glm::vec3& position = glm::vec3(0.f))
 	{
 		auto entity = m_Registry.create();
 

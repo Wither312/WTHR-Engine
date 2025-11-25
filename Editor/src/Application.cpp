@@ -6,7 +6,7 @@
 #include <Scene.hpp>
 
 
-Application::Application(int width, int height, const char* title) : m_Renderer(width,height)
+Application::Application()
 {
 
 }
@@ -16,6 +16,13 @@ Application::~Application()
 	Shutdown();
 }
 bool Application::isFocused = false;
+void WindowSizeCallback(GLFWwindow* window, int width, int height)
+{
+	Renderer* renderer = static_cast<Renderer*>(glfwGetWindowUserPointer(window));
+	if (renderer)
+		renderer->setSize(width, height);
+}
+
 
 bool Application::Init()
 {
@@ -24,6 +31,9 @@ bool Application::Init()
 	InitImGui();
 	InitEngineSystems();
 	m_Renderer.Init();
+	// Setup
+	glfwSetWindowUserPointer(m_WindowManager.GetWindow(), &m_Renderer);
+	glfwSetWindowSizeCallback(m_WindowManager.GetWindow(), WindowSizeCallback);
 
 	m_Input.setWindow(m_WindowManager.GetWindow());
 	if (m_WindowManager.GetWindow() == nullptr) __debugbreak();
@@ -180,7 +190,7 @@ void Application::Run()
 			scene.GetCamera().ProcessKeyboard(RIGHT, deltaTime);
 
 
-		std::filesystem::path path = std::filesystem::current_path().concat("\\test.sce");
+		std::filesystem::path path = std::filesystem::current_path().concat("\\Default.sce");
 
 		ImGui::Begin("ECS");
 		if (ImGui::Button("Save"))
@@ -443,10 +453,35 @@ void Application::Run()
 		ImGui::End();
 
 		ImGui::Begin("Modal inspector");
-		if (ImGui::Button("Load Model"))
+		
+		
+		if (ImGui::Button(("Load Model")))
 		{
-			scene.CreateModel("backpack.obj", glm::vec4(1.0f));
+			ImGui::OpenPopup(("Load Model"));
 		}
+		if (ImGui::BeginPopupModal(("Load Model"), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			static char filepath[256] = "";
+			ImGui::InputText("File Path", filepath, IM_ARRAYSIZE(filepath));
+
+			if (ImGui::Button("Load"))
+			{
+				std::string pathStr = filepath;
+
+				scene.CreateModel(filepath, glm::vec4(1.0f));
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				filepath[0] = '\0';
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+
 		ImGui::End();
 
 		ImGui::Begin("Registry Debug");
@@ -563,9 +598,19 @@ void Application::Run()
 		// ImGui::SetCursorPosY((windowSize.y - buttonSize.y) * 0.5f);
 
 		// Draw button
-		if (ImGui::Button(label, buttonSize)) {
-			spdlog::debug("CLICKEDD!!!");
-			//TODO play scripts
+		if (ImGui::Button("Play", buttonSize)) {
+			for (auto& instance : scene.script.scripts)
+			{
+				instance.second.isActive = true;
+			}
+
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Pause", buttonSize)) {
+			for (auto& instance : scene.script.scripts)
+			{
+				instance.second.isActive = false;
+			}
 
 		}
 		ImGuizmo::SetDrawlist();

@@ -8,7 +8,7 @@
 class Application
 {
 public:
-	Application(int width = 5, int height = 5, const char* title = "WTHR Editor");
+	Application();
 	virtual ~Application();
 
 	bool Init();

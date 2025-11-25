@@ -13,7 +13,7 @@ Debug/
 Release/
 x64/
 x86/
-assets/
+assets/models
 
 # CMake files
 CMakeFiles/

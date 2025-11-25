@@ -189,7 +189,7 @@ void Script::update(float dt) {
             if (it == scripts.end()) continue;
 
             auto& instance = it->second;
-            if (instance.onUpdate.valid()) {
+            if (instance.onUpdate.valid() && instance.isActive) {
                 try {
                     instance.onUpdate(static_cast<uint32_t>(entity), dt);
                 }

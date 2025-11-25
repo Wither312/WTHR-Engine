@@ -11,7 +11,7 @@ void RuntimeApp::Init() {
 	spdlog::info("Initializing RuntimeApp");
 
 	// Create window
-	m_Window = std::make_shared<Window>(1280, 720, "WTHR Runtime");
+	m_Window = std::make_shared<Window>(1920, 1080, "WTHR Runtime");
 
 	// Create scene and pass the native GLFW window to it
 	m_Scene = std::make_shared<Scene>(m_Window->GetNativeWindow());
@@ -21,7 +21,7 @@ void RuntimeApp::Init() {
 
 	m_Scene->Load("Default.sce");
 
-	m_Renderer = std::make_shared<Renderer>(1280, 720);
+	m_Renderer = std::make_shared<Renderer>();
 	spdlog::info("Scene initialized with test cubes");
 }
 

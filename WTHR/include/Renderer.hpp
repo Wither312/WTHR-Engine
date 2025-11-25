@@ -12,7 +12,7 @@ class Shader;
 class Renderer
 {
 public:
-    Renderer(int,int);
+    Renderer();
     ~Renderer()
     {
 

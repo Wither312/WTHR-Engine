@@ -6,9 +6,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <ScriptEditor.hpp>
 
-Renderer::Renderer(int width,int height) : width(width),height(height)
+Renderer::Renderer() 
 {
-
+	width = 1920;
+	height = 1080;
 }
 
 static Framebuffer::PixelInfo pixel;

@@ -2,7 +2,7 @@
 
 int main()
 {
-    Application app(1280, 720, "WTHR Editor");
+    Application app;
     if (!app.Init())
         return -1;
 
