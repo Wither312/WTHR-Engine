@@ -82,7 +82,7 @@ void Renderer::DrawTriangle(const glm::vec3& color)
 void Renderer::RenderScene(Scene& scene, Shader& shader)
 {
 	// Retrieve the camera (owned by the scene)
-	Camera camera = scene.GetCamera();
+	Camera& camera = scene.GetCamera();
 	auto view = camera.GetViewMatrix();
 	float nearPlane = 0.1f;  // don’t make it too small
 	float farPlane = 100.f; // must be farther than your objects
@@ -105,6 +105,13 @@ void Renderer::RenderScene(Scene& scene, Shader& shader)
 	shader.setMat4("projection", projection);
 
 	registry.view<MeshComponent, Transform>().each([&](auto entity, auto& meshComp, auto& transform) {
+		
+		if (scene.HasComponent<Camera>(entity))
+		{
+			Camera& cam = scene.GetComponent<Camera>(entity);
+		}
+		
+		
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), transform.position);
 		model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
 		model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
@@ -169,7 +176,7 @@ void Renderer::RenderScene(Scene& scene, Shader& shader)
 
 			shader.setMat4("model", model);
 			meshComp.model.get()->Draw(shader);
-
+		
 		}
 		});
 

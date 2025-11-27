@@ -85,3 +85,14 @@ private:
 struct ModelComponent {
     std::shared_ptr<ThreadSafeModel> model;
 };
+struct PlayerController {
+	glm::vec3 velocity;      
+	glm::vec3 halfExtents;   
+	bool isGrounded = false; 
+	float moveSpeed = 5.0f;  
+	float jumpForce = 10.0f; 
+};
+struct GroupComponent
+{
+	int id;
+};

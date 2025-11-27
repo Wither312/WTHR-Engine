@@ -10,6 +10,12 @@
 #include <GLContextWorker.hpp>
 #include "Camera.hpp"
 
+enum class CameraType {
+	Player,
+	Editor,
+	FreeCam
+};
+
 class Scene {
 public:
 	Scene(GLFWwindow* window) : worker(window)
@@ -26,7 +32,33 @@ public:
 		std::cout << "Scale:    (" << t.scale.x << ", " << t.scale.y << ", " << t.scale.z << ")\n";
 	}
 	entt::registry& GetRegistry() { return m_Registry; }
-	Camera& GetCamera() { return m_Camera; }
+	Camera& GetCamera()
+	{
+		Camera* foundCamera = nullptr;
+
+		switch (m_CameraType)
+		{
+		case CameraType::Player:
+			m_Registry.view<Camera>().each([&](auto entity, Camera& camera) {
+				// Here, decide which camera is the player camera
+				// For example, check if this entity has PlayerController
+				if (m_Registry.any_of<PlayerController>(entity)) {
+					foundCamera = &camera;
+				}
+				});
+			if (foundCamera) return *foundCamera;
+			throw std::runtime_error("No camera found for the selected type");
+			break;
+		case CameraType::Editor:
+			return m_Camera;
+			break;
+		case CameraType::FreeCam:
+			break;
+		}
+
+	}
+	CameraType GetCameraType() { return m_CameraType; }
+	void setCameraType(CameraType type) { m_CameraType = type; }
 	std::unordered_map<std::string, Texture>& GetTextures() { return m_Textures; }; // path or name → texture data
 
 
@@ -46,6 +78,24 @@ public:
 		}
 
 	}
+
+	entt::entity CreatePlayer(const glm::vec3& position = glm::vec3(0.f)) {
+		auto entity = m_Registry.create();
+		Transform& trans = m_Registry.emplace<Transform>(entity, position);
+		m_Registry.emplace<PlayerController>(entity, PlayerController());
+		m_Registry.emplace<MeshComponent>(entity, std::make_shared<Shapes::Cube>());
+		Camera& camera = m_Registry.emplace<Camera>(entity, Camera());
+		trans.scale.y *= 2;
+		camera.GetViewMatrix();
+		camera.Front = glm::vec3(0.f);
+		camera.Position = glm::vec3(0.f);
+
+
+
+		return entity;
+	}
+
+
 
 	// -------------------------
 	// Helper to create a cube
@@ -113,4 +163,5 @@ private:
 	std::unordered_map<std::string, Texture> m_Textures; // path or name → texture data
 	entt::registry m_Registry;
 	Camera m_Camera;
+	CameraType m_CameraType = CameraType::Editor;
 };

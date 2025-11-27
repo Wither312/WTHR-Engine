@@ -4,6 +4,7 @@
 #include <WindowManager.hpp>
 #include <InputManager.hpp>
 #include <Renderer.hpp>
+#include <PhysicsWorld.hpp>
 
 class Application
 {
@@ -27,4 +28,5 @@ protected:
 	WindowManager m_WindowManager;
 	InputManager m_Input;
 	Renderer m_Renderer;
+	PhysicsWorld m_World;
 };

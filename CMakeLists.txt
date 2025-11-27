@@ -50,7 +50,7 @@ target_include_directories(ImGuizmo PUBLIC vendor/ImGuizmo vendor/imgui)
 target_link_libraries(ImGuizmo PUBLIC imgui glm)
 
 # Add WTHR app
-add_subdirectory(Physics)
 add_subdirectory(WTHR)
+add_subdirectory(Physics)
 add_subdirectory(Editor)
 add_subdirectory(Runtime)

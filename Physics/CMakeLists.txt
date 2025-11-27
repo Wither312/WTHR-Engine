@@ -44,5 +44,6 @@ endif()
 # Link libraries
 target_link_libraries(Physics
     PRIVATE
+    WTHR
       
 )

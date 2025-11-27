@@ -33,6 +33,7 @@ target_precompile_headers(Editor PRIVATE include/pch.hpp)
 target_link_libraries(Editor
     PRIVATE
         WTHR
+        Physics
         glfw
         glm
         spdlog

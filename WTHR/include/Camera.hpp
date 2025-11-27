@@ -60,6 +60,28 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
+    void ProcessKeyboard_Player(Camera_Movement direction, float deltaTime)
+    {
+        float velocity = MovementSpeed * deltaTime;
+
+        // Create a horizontal (XZ-only) forward vector
+        glm::vec3 frontXZ = glm::normalize(glm::vec3(Front.x, 0.0f, Front.z));
+
+        // Same for right vector (Right should already be perpendicular, but zero Y just in case)
+        glm::vec3 rightXZ = glm::normalize(glm::vec3(Right.x, 0.0f, Right.z));
+
+        if (direction == FORWARD)
+            Position += frontXZ * velocity;
+        if (direction == BACKWARD)
+            Position -= frontXZ * velocity;
+        if (direction == LEFT)
+            Position -= rightXZ * velocity;
+        if (direction == RIGHT)
+            Position += rightXZ * velocity;
+    }
+
+
+
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
